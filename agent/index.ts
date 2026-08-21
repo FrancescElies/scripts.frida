@@ -1,40 +1,5 @@
 import { log } from "./logger.js";
 
-// const header = Memory.alloc(16);
-// header
-//     .writeU32(0xdeadbeef).add(4)
-//     .writeU32(0xd00ff00d).add(4)
-//     .writeU64(uint64("0x1122334455667788"));
-// log(hexdump(header.readByteArray(16) as ArrayBuffer, { ansi: true }));
-//
-// Process.getModuleByName("libSystem.B.dylib")
-//     .enumerateExports()
-//     .slice(0, 16)
-//     .forEach((exp, index) => {
-//         log(`export ${index}: ${exp.name}`);
-//     });
-//
-// Interceptor.attach(Module.findGlobalExportByName("open")!, {
-//     onEnter(args) {
-//         const path = args[0].readUtf8String();
-//         log(`open() path="${path}"`);
-//     }
-// });
-
-Process.getModuleByName("libSystem.B.dylib")
-    .enumerateExports()
-    .slice(0, 16)
-    .forEach((exp, index) => {
-        log(`export ${index}: ${exp.name}`);
-    });
-
-Interceptor.attach(Module.findGlobalExportByName("open")!, {
-    onEnter(args) {
-        const path = args[0].readUtf8String();
-        log(`open() path="${path}"`);
-    }
-});
-
 /**
  * Unified Frida Toolkit
  *
@@ -62,7 +27,8 @@ Interceptor.attach(Module.findGlobalExportByName("open")!, {
 // TYPES
 // ============================================================================
 
-type MemoryReadType = "string" | "cstring" | "int" | "uint" | "long" | "ulong" | "bytes" | "hex";
+type MemoryReadType =
+  "string" | "cstring" | "int" | "uint" | "long" | "ulong" | "bytes" | "hex";
 type MemoryWriteType = "string" | "cstring" | "int" | "uint" | "long" | "bytes";
 
 interface HookCallbacks {
@@ -139,7 +105,11 @@ const U = {
   },
 
   /** Read memory as different types. */
-  readMem(addr: NativePointer | string, type: MemoryReadType = "string", size = 256): any {
+  readMem(
+    addr: NativePointer | string,
+    type: MemoryReadType = "string",
+    size = 256,
+  ): any {
     try {
       const pointer = typeof addr === "string" ? ptr(addr) : addr;
 
@@ -169,7 +139,11 @@ const U = {
   },
 
   /** Write memory. */
-  writeMem(addr: NativePointer | string, value: any, type: MemoryWriteType = "int"): void {
+  writeMem(
+    addr: NativePointer | string,
+    value: any,
+    type: MemoryWriteType = "int",
+  ): void {
     try {
       const pointer = typeof addr === "string" ? ptr(addr) : addr;
 
@@ -202,7 +176,10 @@ const U = {
   },
 
   /** Allocate memory and write data. */
-  allocate(value: any, type: "string" | "cstring" | "int" | "bytes" = "string"): NativePointer | null {
+  allocate(
+    value: any,
+    type: "string" | "cstring" | "int" | "bytes" = "string",
+  ): NativePointer | null {
     try {
       if (type === "string" || type === "cstring") {
         return Memory.allocUtf8String(value);
@@ -293,7 +270,12 @@ const U = {
   },
 
   /** List all loaded modules. */
-  listModules(): Array<{ name: string; base: string; size: number; path: string }> {
+  listModules(): Array<{
+    name: string;
+    base: string;
+    size: number;
+    path: string;
+  }> {
     return Process.enumerateModules().map((m) => ({
       name: m.name,
       base: m.base.toString(),
@@ -321,7 +303,7 @@ const U = {
     fnName: string,
     returnType: NativeFunctionReturnType = "int",
     argTypes: NativeFunctionArgumentType[] = [],
-    args: any[] = []
+    args: any[] = [],
   ): any {
     try {
       const addr = this.findFunc(fnName);
@@ -378,7 +360,10 @@ const H = {
       const listener = Interceptor.attach(addr, {
         onEnter(args) {
           if (logArgs) {
-            const argStr = Array.from({ length: 6 }, (_, i) => args[i]?.toString() ?? "null").join(", ");
+            const argStr = Array.from(
+              { length: 6 },
+              (_, i) => args[i]?.toString() ?? "null",
+            ).join(", ");
             console.log(`[>] ${fnName}(${argStr})`);
           }
 
@@ -425,7 +410,11 @@ const H = {
 
     (globalThis as any).mallocTracker = {
       count: () => H.mallocAllocations.size,
-      total: () => Array.from(H.mallocAllocations.values()).reduce((sum, a) => sum + a.size, 0),
+      total: () =>
+        Array.from(H.mallocAllocations.values()).reduce(
+          (sum, a) => sum + a.size,
+          0,
+        ),
       list: () =>
         Array.from(H.mallocAllocations.entries()).map(([addr, info]) => ({
           address: addr,
@@ -473,7 +462,9 @@ const H = {
 
   /** Hook common string operations. */
   hookStringOps(): void {
-    ["strlen", "strcpy", "strcat", "strcmp"].forEach((fn) => this.hook(fn, { logReturn: false }));
+    ["strlen", "strcpy", "strcat", "strcmp"].forEach((fn) =>
+      this.hook(fn, { logReturn: false }),
+    );
     console.log("[+] String operation hooks installed");
   },
 
@@ -505,7 +496,11 @@ const H = {
   },
 
   /** Compatibility alias; replacement logic is centralized in C. */
-  replaceReturn(fnName: string, returnValue: any, returnType: NativeCallbackReturnType = "int"): void {
+  replaceReturn(
+    fnName: string,
+    returnValue: any,
+    returnType: NativeCallbackReturnType = "int",
+  ): void {
     C.forceReturn(fnName, returnValue, returnType);
   },
 };
@@ -584,19 +579,29 @@ const A = {
     });
 
     this.memoryListeners.push(mallocListener, freeListener);
-    console.log(`[+] Memory tracking started (suspect after ${suspectAfterMs} ms)`);
+    console.log(
+      `[+] Memory tracking started (suspect after ${suspectAfterMs} ms)`,
+    );
   },
 
   /** Print the current memory/leak report. */
   memoryReport(): void {
     const leaks = Array.from(A.allocations.values()) as AllocationInfo[];
     const now = Date.now();
-    const suspectedLeaks = leaks.filter((l) => now - l.timestamp > A.suspectAfterMs);
+    const suspectedLeaks = leaks.filter(
+      (l) => now - l.timestamp > A.suspectAfterMs,
+    );
 
     console.log("\n=== MEMORY LEAK REPORT ===");
-    console.log(`Total Allocated        : ${(this.memoryStats.totalAllocated / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`Total Freed            : ${(this.memoryStats.totalFreed / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`Current Usage          : ${((this.memoryStats.totalAllocated - this.memoryStats.totalFreed) / 1024 / 1024).toFixed(2)} MB`);
+    console.log(
+      `Total Allocated        : ${(this.memoryStats.totalAllocated / 1024 / 1024).toFixed(2)} MB`,
+    );
+    console.log(
+      `Total Freed            : ${(this.memoryStats.totalFreed / 1024 / 1024).toFixed(2)} MB`,
+    );
+    console.log(
+      `Current Usage          : ${((this.memoryStats.totalAllocated - this.memoryStats.totalFreed) / 1024 / 1024).toFixed(2)} MB`,
+    );
     console.log(`Unreleased Blocks      : ${leaks.length}`);
     console.log(`Suspected Leaks        : ${suspectedLeaks.length}`);
 
@@ -612,7 +617,9 @@ const A = {
         .slice(0, 10)
         .forEach(([size, count]) => {
           const total = Number(size) * count;
-          console.log(`  ${count}x ${size} bytes (${(total / 1024).toFixed(2)} KB)`);
+          console.log(
+            `  ${count}x ${size} bytes (${(total / 1024).toFixed(2)} KB)`,
+          );
         });
     }
   },
@@ -634,9 +641,15 @@ const A = {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const current = this.memoryStats.totalAllocated - this.memoryStats.totalFreed;
-      const progress = Math.min(100, Math.round((elapsed / (duration * 1000)) * 100));
-      console.log(`[${progress}%] Allocs: ${this.allocations.size}, Current: ${(current / 1024 / 1024).toFixed(2)}MB`);
+      const current =
+        this.memoryStats.totalAllocated - this.memoryStats.totalFreed;
+      const progress = Math.min(
+        100,
+        Math.round((elapsed / (duration * 1000)) * 100),
+      );
+      console.log(
+        `[${progress}%] Allocs: ${this.allocations.size}, Current: ${(current / 1024 / 1024).toFixed(2)}MB`,
+      );
     }, 1000);
 
     setTimeout(() => {
@@ -709,7 +722,9 @@ const A = {
     });
 
     this.profilerListeners.set(fnName, listener);
-    console.log(`[*] Profiling ${fnName}... (collecting ${sampleCount} samples)`);
+    console.log(
+      `[*] Profiling ${fnName}... (collecting ${sampleCount} samples)`,
+    );
   },
 
   profileMultiple(functionNames: string[]): void {
@@ -731,7 +746,9 @@ const A = {
   reportPerformance(functionName: string | null = null): void {
     console.log("\n=== PERFORMANCE REPORT ===\n");
 
-    const names = functionName ? [functionName] : Array.from(this.performance.keys());
+    const names = functionName
+      ? [functionName]
+      : Array.from(this.performance.keys());
 
     names.forEach((fn) => {
       const stats = this.performance.get(fn);
@@ -823,7 +840,9 @@ const D = {
         }
 
         const bt = Thread.backtrace(this.context, Backtracer.ACCURATE);
-        const symbols = bt.slice(0, depth).map((a) => DebugSymbol.fromAddress(a).toString());
+        const symbols = bt
+          .slice(0, depth)
+          .map((a) => DebugSymbol.fromAddress(a).toString());
 
         D.traces[fnName].push({
           time: Date.now(),
@@ -837,7 +856,9 @@ const D = {
     });
 
     this.traceListeners.set(fnName, listener);
-    console.log(`[+] Tracing ${fnName}${maxCalls > 0 ? ` (max ${maxCalls} calls)` : ""}`);
+    console.log(
+      `[+] Tracing ${fnName}${maxCalls > 0 ? ` (max ${maxCalls} calls)` : ""}`,
+    );
   },
 
   /** Alias matching the example script's FunctionTracer.trace(). */
@@ -859,9 +880,11 @@ const D = {
 
   traceSummary(): void {
     console.log("\n=== TRACE SUMMARY ===");
-    (Object.entries(D.traces) as Array<[string, TraceEntry[]]>).forEach(([fn, calls]) => {
-      console.log(`${fn}: ${calls.length} calls`);
-    });
+    (Object.entries(D.traces) as Array<[string, TraceEntry[]]>).forEach(
+      ([fn, calls]) => {
+        console.log(`${fn}: ${calls.length} calls`);
+      },
+    );
   },
 
   clearTraces(functionName: string | null = null): void {
@@ -898,7 +921,10 @@ const C = {
   replacements: new Map<string, NativePointer>(),
 
   /** Intercept a function and modify its arguments. */
-  intercept(fnName: string, modifier: (this: InvocationContext, args: InvocationArguments) => void): void {
+  intercept(
+    fnName: string,
+    modifier: (this: InvocationContext, args: InvocationArguments) => void,
+  ): void {
     const addr = U.findFunc(fnName);
     if (!addr) return;
 
@@ -924,7 +950,11 @@ const C = {
   },
 
   /** Force a function to return a specific value. */
-  forceReturn(functionName: string, returnValue: any, returnType: NativeCallbackReturnType = "int"): void {
+  forceReturn(
+    functionName: string,
+    returnValue: any,
+    returnType: NativeCallbackReturnType = "int",
+  ): void {
     const addr = U.findFunc(functionName);
     if (!addr) return;
 
@@ -937,12 +967,15 @@ const C = {
             return returnValue;
           },
           returnType,
-          []
-        )
+          [],
+        ),
       );
 
       this.replacements.set(functionName, addr);
-      this.modifications.set(functionName, { type: "return", value: returnValue });
+      this.modifications.set(functionName, {
+        type: "return",
+        value: returnValue,
+      });
       console.log(`[+] ${functionName} will always return ${returnValue}`);
     } catch (e: any) {
       console.log(`[!] Replace error: ${e.message}`);
@@ -950,7 +983,11 @@ const C = {
   },
 
   /** Compatibility name from the utility template. */
-  mock(fnName: string, returnValue: any, returnType: NativeCallbackReturnType = "int"): void {
+  mock(
+    fnName: string,
+    returnValue: any,
+    returnType: NativeCallbackReturnType = "int",
+  ): void {
     this.forceReturn(fnName, returnValue, returnType);
   },
 
@@ -961,19 +998,27 @@ const C = {
   },
 
   /** Modify one argument before the original function executes. */
-  modifyArg(functionName: string, argIndex: number, newValue: NativePointerValue): void {
+  modifyArg(
+    functionName: string,
+    argIndex: number,
+    newValue: NativePointerValue,
+  ): void {
     const addr = U.findFunc(functionName);
     if (!addr) return;
 
     const key = `arg:${functionName}:${argIndex}`;
     if (this.listeners.has(key)) {
-      console.log(`[!] Argument modifier already active: ${functionName}[${argIndex}]`);
+      console.log(
+        `[!] Argument modifier already active: ${functionName}[${argIndex}]`,
+      );
       return;
     }
 
     const listener = Interceptor.attach(addr, {
       onEnter(args) {
-        console.log(`[MODIFY] ${functionName} arg[${argIndex}]: ${args[argIndex]} → ${newValue}`);
+        console.log(
+          `[MODIFY] ${functionName} arg[${argIndex}]: ${args[argIndex]} → ${newValue}`,
+        );
         args[argIndex] = newValue as any;
       },
     });
@@ -1072,15 +1117,17 @@ const N = {
   dataListeners: new Map<string, InvocationListener>(),
 
   /** Hook common network/API functions and retain a call history. */
-  hookAPI(functionNames: string[] = [
-    "curl_easy_perform",
-    "socket",
-    "connect",
-    "send",
-    "recv",
-    "sendto",
-    "recvfrom",
-  ]): void {
+  hookAPI(
+    functionNames: string[] = [
+      "curl_easy_perform",
+      "socket",
+      "connect",
+      "send",
+      "recv",
+      "sendto",
+      "recvfrom",
+    ],
+  ): void {
     functionNames.forEach((fnName) => {
       if (this.apiListeners.has(fnName)) return;
 
@@ -1150,7 +1197,10 @@ const N = {
   },
 
   /** Monitor write/send/sendto buffers for configured sensitive keywords. */
-  monitorSensitiveData(patterns: string[] = this.suspiciousPatterns, maxBufferSize = 4096): void {
+  monitorSensitiveData(
+    patterns: string[] = this.suspiciousPatterns,
+    maxBufferSize = 4096,
+  ): void {
     const targets = ["write", "send", "sendto"];
 
     targets.forEach((fnName) => {
@@ -1251,11 +1301,18 @@ const BehaviorModifier = {
   get modifications() {
     return C.modifications;
   },
-  forceReturn: (functionName: string, returnValue: any, returnType: NativeCallbackReturnType = "int") =>
-    C.forceReturn(functionName, returnValue, returnType),
-  modifyArg: (functionName: string, argIndex: number, newValue: NativePointerValue) =>
-    C.modifyArg(functionName, argIndex, newValue),
-  skip: (functionName: string, returnValue: any = 0) => C.skip(functionName, returnValue),
+  forceReturn: (
+    functionName: string,
+    returnValue: any,
+    returnType: NativeCallbackReturnType = "int",
+  ) => C.forceReturn(functionName, returnValue, returnType),
+  modifyArg: (
+    functionName: string,
+    argIndex: number,
+    newValue: NativePointerValue,
+  ) => C.modifyArg(functionName, argIndex, newValue),
+  skip: (functionName: string, returnValue: any = 0) =>
+    C.skip(functionName, returnValue),
   listModifications: () => C.listModifications(),
 };
 
@@ -1264,8 +1321,10 @@ const PerformanceProfiler = {
     return A.performance;
   },
   profile: (functionName: string) => A.profile(functionName),
-  profileMultiple: (functionNames: string[]) => A.profileMultiple(functionNames),
-  report: (functionName: string | null = null) => A.reportPerformance(functionName),
+  profileMultiple: (functionNames: string[]) =>
+    A.profileMultiple(functionNames),
+  report: (functionName: string | null = null) =>
+    A.reportPerformance(functionName),
   slowest: (count = 5) => A.slowest(count),
 };
 
