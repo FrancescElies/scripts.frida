@@ -1,7 +1,6 @@
 /**
- * Frida Utilities Template (TypeScript)
  *
- * A complete, production-ready utility library for Frida REPL
+ * Utility library for Frida REPL
  *
  * Usage:
  *   frida-compile frida_utils_template.ts -o frida_utils_template.js
@@ -15,8 +14,6 @@
  *   C.intercept("read", (args) => { ... })
  *   help()
  */
-
-/// <reference types="frida-gum" />
 
 // ============================================================================
 // TYPES

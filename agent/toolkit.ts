@@ -1,16 +1,12 @@
 /**
- * Frida Example Scripts (TypeScript)
- *
  * Ready-to-use scripts for common Frida tasks
  *
  * Compile:
- *   frida-compile frida_example_scripts.ts -o frida_example_scripts.js
+ *   frida-compile toolkit.ts -o toolkit.js
  *
  * Load:
  *   frida -U com.example.app -l frida_utils_template.js -l frida_example_scripts.js
  */
-
-/// <reference types="frida-gum" />
 
 // ============================================================================
 // EXAMPLE 1: MEMORY LEAK DETECTOR
@@ -135,20 +131,27 @@ const APIInterceptor = {
   calls: [] as ApiCall[],
   callCount: 0,
 
+
   /**
    * Hook common network / API functions
    */
-  hookAPI(): void {
-    const commonAPIs = [
-      "curl_easy_perform",
-      "socket",
-      "connect",
-      "send",
-      "recv",
-      "sendto",
-      "recvfrom",
-    ];
+  hookCommonAPI(): void {
+    this.hookAPI(
+      [
+        "curl_easy_perform",
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "sendto",
+        "recvfrom",
+      ]);
+  },
 
+  /**
+   * Hook API functions
+   */
+  hookAPI(commonAPIs: string[]): void {
     commonAPIs.forEach((fnName) => {
       try {
         const addr = Module.findExportByName(null, fnName);
