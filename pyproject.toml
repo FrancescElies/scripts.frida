@@ -1,0 +1,7 @@
+[project]
+name = "scripts-frida"
+version = "0.1.0"
+description = "My utility scripts"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = ["frida-tools==14.10.4"]
