@@ -1,25 +1,4 @@
-import { log } from "./logger.js";
-
-/**
- * Unified Frida Toolkit
- *
- * Compile:
- *   frida-compile frida_toolkit_unified.ts -o frida_toolkit_unified.js
- *
- * Load:
- *   frida -U com.example.app -l frida_toolkit_unified.js
- *
- * REPL examples:
- *   U.hook("malloc")
- *   H.hookMalloc()
- *   A.analyzeMemory(10)
- *   A.startMemoryTracking()
- *   D.traceFunction("strlen")
- *   C.intercept("read", (args) => { ... })
- *   N.hookAPI()
- *   N.monitorSensitiveData()
- *   help()
- */
+/// Frida Toolkit
 
 /// <reference types="frida-gum" />
 
@@ -1343,7 +1322,7 @@ const ExfiltrationDetector = {
 // HELP
 // ============================================================================
 
-function help(): void {
+function toolkitHelp(): void {
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                  FRIDA TOOLKIT                        ║
@@ -1391,7 +1370,7 @@ Object.assign(globalThis as any, {
   D,
   C,
   N,
-  help,
+  toolkitHelp,
   MemoryLeakDetector,
   APIInterceptor,
   FunctionTracer,
@@ -1401,7 +1380,7 @@ Object.assign(globalThis as any, {
 });
 
 console.log(`
-╔══════════════════════════════════════════════════╗
-║     Frida toolkit loaded – f.help() for usage    ║
-╚══════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════╗
+║     Frida toolkit loaded – toolkitHelp() for usage    ║
+╚═══════════════════════════════════════════════════════╝
 `);
