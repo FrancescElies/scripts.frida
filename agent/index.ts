@@ -76,6 +76,7 @@ const U = {
   /** Find a function by export name. */
   findFunc(fnName: string, module: string | null = null): NativePointer | null {
     try {
+      // @ts-ignore
       return Module.findExportByName(module, fnName);
     } catch (e: any) {
       console.log(`[!] Function not found: ${fnName}`);
@@ -289,6 +290,8 @@ const U = {
       if (!addr) return null;
 
       const fn = new NativeFunction(addr, returnType, argTypes);
+
+      // @ts-ignore
       const result = fn(...args);
       console.log(`[+] ${fnName}() returned: ${result}`);
       return result;
@@ -1177,6 +1180,7 @@ const N = {
 
   /** Monitor write/send/sendto buffers for configured sensitive keywords. */
   monitorSensitiveData(
+    // @ts-ignore
     patterns: string[] = this.suspiciousPatterns,
     maxBufferSize = 4096,
   ): void {
@@ -1189,7 +1193,7 @@ const N = {
       if (!addr) return;
 
       const listener = Interceptor.attach(addr, {
-        onEnter(args) {
+        onEnter(args: InvocationArguments) {
           try {
             const bufPtr = args[1];
             const size = args[2].toInt32();
