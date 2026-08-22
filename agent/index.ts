@@ -74,14 +74,8 @@ interface Detection {
 
 const U = {
   /** Find a function by export name. */
-  findFunc(fnName: string, module: string | null = null): NativePointer | null {
-    try {
-      // @ts-ignore
-      return Module.findExportByName(module, fnName);
-    } catch (e: any) {
-      console.log(`[!] Function not found: ${fnName}`);
-      return null;
-    }
+  findFunc(fnName: string): NativePointer | null {
+    return Module.findGlobalExportByName(fnName);
   },
 
   /** Read memory as different types. */
