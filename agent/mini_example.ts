@@ -1,4 +1,5 @@
 const header = Memory.alloc(16);
+
 header
   .writeU32(0xdeadbeef)
   .add(4)
